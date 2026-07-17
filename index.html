@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RobinOmnia — the Robinhood Chain knowledge layer for humans and AI agents</title>
+<meta name="description" content="RobinOmnia: protocol specs, token standards, API references and news for Robinhood Chain — built to be read by humans and parsed by AI agents.">
+
+<!-- ============================================================
+     MACHINE-READABLE BLOCK FOR AI AGENTS
+     See the "For Agents" section for /llms.txt-style data and
+     citation guidance. JSON-LD below for quick parsing.
+     ============================================================ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Dataset",
+  "name": "RobinOmnia — Robinhood Chain Knowledge Layer",
+  "description": "Structured, agent-readable knowledge base about Robinhood Chain: chain specs, JSON-RPC/API endpoints, the ERC-8056 stock-token standard, and network news.",
+  "keywords": ["Robinhood Chain", "Layer 2", "Arbitrum Orbit", "EVM", "ERC-8056", "ERC-4337", "Stock Tokens", "USDG", "Chain ID 4663"],
+  "isAccessibleForFree": true,
+  "license": "https://creativecommons.org/licenses/by/4.0/",
+  "citation": "https://docs.robinhood.com/chain/",
+  "sameAs": "https://x.com/robinomnia",
+  "disclaimer": "Unofficial community resource. Not affiliated with or endorsed by Robinhood Markets, Inc."
+}
+</script>
+
+<style>
+  :root{
+    --bg:#060a07;
+    --bg-panel:#0d130c;
+    --bg-panel-2:#121a10;
+    --line:#233020;
+    --lime:#aef22c;
+    --lime-dim:#7fdc2e;
+    --lime-deep:#4a8f1f;
+    --lime-cold:#5fe0a8;
+    --text:#e4f5db;
+    --text-muted:#8aa088;
+    --text-faint:#516350;
+    --mono-bg:#050805;
+    --radius:14px;
+    --font-display:'Space Grotesk', 'Arial Narrow', sans-serif;
+    --font-body:'IBM Plex Sans', Arial, sans-serif;
+    --font-mono:'IBM Plex Mono', 'Courier New', monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(174,242,44,0.06), transparent 60%),
+      radial-gradient(900px 500px at 100% 20%, rgba(95,224,168,0.045), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    position:relative;
+  }
+  a{color:inherit;}
+  ::selection{background:var(--lime); color:#060a07;}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 28px;}
+
+  /* floating binary code field */
+  #binary-bg{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    width:100%; height:100%;
+    opacity:0.5;
+  }
+
+  .grain{
+    position:fixed; inset:0; pointer-events:none; z-index:1;
+    background-image: linear-gradient(rgba(174,242,44,0.02) 1px, transparent 1px);
+    background-size: 100% 3px;
+    mix-blend-mode:overlay;
+  }
+  .grain::after{
+    content:"";
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(180deg, rgba(95,224,168,0.015) 0px, transparent 1px, transparent 4px);
+    animation:scan-drift 9s linear infinite;
+  }
+  @keyframes scan-drift{from{transform:translateY(0);} to{transform:translateY(4px);}}
+
+  header, .ticker, section, footer{position:relative; z-index:2;}
+
+  header{
+    position:sticky; top:0; z-index:50;
+    background:rgba(6,10,7,0.88);
+    backdrop-filter: blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  header::after{
+    content:""; position:absolute; left:0; right:0; bottom:-1px; height:1px;
+    background:linear-gradient(90deg, transparent, var(--lime-deep) 15%, var(--lime) 50%, var(--lime-deep) 85%, transparent);
+    background-size:220% 100%;
+    animation:trace-sweep 7s linear infinite;
+    opacity:0.55;
+  }
+  @keyframes trace-sweep{0%{background-position:220% 0;} 100%{background-position:-20% 0;}}
+  .nav{display:flex; align-items:center; justify-content:space-between; padding:16px 0; gap:20px;}
+  .logo{
+    display:flex; align-items:center; gap:11px; font-family:var(--font-display); font-weight:700;
+    letter-spacing:0.02em; font-size:17px; white-space:nowrap;
+    padding:7px 14px 7px 10px; border:1px solid var(--line); border-radius:7px; position:relative;
+  }
+  .logo::before, .logo::after{
+    content:""; position:absolute; width:6px; height:6px; opacity:0.8; pointer-events:none;
+  }
+  .logo::before{top:4px; left:4px; border-top:1px solid var(--lime-deep); border-left:1px solid var(--lime-deep);}
+  .logo::after{bottom:4px; right:4px; border-bottom:1px solid var(--lime-deep); border-right:1px solid var(--lime-deep);}
+  .logo .dot{width:8px; height:8px; border-radius:2px; background:var(--lime); box-shadow:0 0 12px 2px rgba(174,242,44,0.6); animation:pulse 1.8s infinite ease-in-out; flex-shrink:0;}
+  .logo small{display:block; font-family:var(--font-mono); font-weight:400; font-size:10px; letter-spacing:0.14em; color:var(--text-faint); text-transform:uppercase; margin-top:1px;}
+  .nav ul{list-style:none; display:flex; gap:2px; align-items:center; font-size:12px; font-weight:500;}
+  .nav ul li{position:relative;}
+  .nav ul li + li::before{
+    content:""; position:absolute; left:-1px; top:50%; transform:translateY(-50%);
+    width:1px; height:12px; background:var(--line);
+  }
+  .nav ul a{
+    text-decoration:none; color:var(--text-muted); font-family:var(--font-mono);
+    text-transform:uppercase; letter-spacing:0.04em; padding:8px 14px;
+    display:flex; align-items:center; gap:6px; border-bottom:2px solid transparent;
+    transition:color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .nav ul a::before{content:"/"; color:var(--lime-deep); font-weight:700;}
+  .nav ul a:hover{color:var(--lime); background:rgba(174,242,44,0.06); border-color:var(--lime-deep);}
+  .nav ul a:hover::before{color:var(--lime);}
+  .nav-right{display:flex; align-items:center; gap:14px; padding-left:14px; border-left:1px solid var(--line);}
+  .view-toggle{position:relative;}
+  .view-toggle::before, .view-toggle::after{content:""; position:absolute; width:6px; height:6px; opacity:0.8; pointer-events:none;}
+  .view-toggle::before{top:-1px; left:-1px; border-top:1px solid var(--lime-deep); border-left:1px solid var(--lime-deep);}
+  .view-toggle::after{bottom:-1px; right:-1px; border-bottom:1px solid var(--lime-deep); border-right:1px solid var(--lime-deep);}
+  .docs-btn{
+    font-family:var(--font-mono); font-size:12px; color:#060a07; background:var(--lime);
+    padding:9px 16px; border-radius:6px; text-decoration:none; font-weight:700; letter-spacing:0.03em; text-transform:uppercase;
+    box-shadow:0 0 0 1px rgba(174,242,44,0.35); transition:transform .15s ease, box-shadow .15s ease; white-space:nowrap;
+  }
+  .docs-btn:hover{transform:translateY(-1px); box-shadow:0 4px 18px rgba(174,242,44,0.4);}
+  .x-btn{
+    display:flex; align-items:center; justify-content:center;
+    width:36px; height:36px; border:1px solid var(--line); border-radius:6px;
+    color:var(--text); text-decoration:none; transition:border-color .15s ease, color .15s ease, transform .15s ease;
+    flex-shrink:0;
+  }
+  .x-btn:hover{border-color:var(--lime); color:var(--lime); transform:translateY(-1px);}
+  .x-btn svg{width:15px; height:15px;}
+
+  .view-toggle{display:flex; align-items:center; gap:0; font-family:var(--font-mono); font-size:11.5px; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .view-toggle button{background:transparent; border:none; color:var(--text-muted); padding:8px 12px; cursor:pointer; font-family:inherit; font-size:inherit; letter-spacing:0.04em;}
+  .view-toggle button.active{background:var(--lime); color:#0a0f08; font-weight:700;}
+
+  .hero{padding:72px 0 56px; border-bottom:1px solid var(--line); position:relative;}
+  .eyebrow{display:inline-flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:11.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--lime-dim); border:1px solid var(--line); padding:6px 12px; border-radius:99px; margin-bottom:26px;}
+  .eyebrow .pulse{width:6px; height:6px; border-radius:50%; background:var(--lime); box-shadow:0 0 8px 2px rgba(200,255,61,0.7); animation:pulse 1.8s infinite ease-in-out;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:0.25;}}
+  .hero h1{font-family:var(--font-display); font-weight:700; font-size:clamp(32px, 5vw, 58px); line-height:1.04; letter-spacing:-0.01em; max-width:16ch; margin-bottom:20px;}
+  .hero h1 em{font-style:normal; color:var(--lime);}
+  .hero p.lead{font-size:16.5px; color:var(--text-muted); max-width:58ch; margin-bottom:30px;}
+  .hero-actions{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:48px;}
+  .btn-primary{background:var(--lime); color:#0a0f08; font-weight:700; padding:13px 22px; border-radius:9px; text-decoration:none; font-size:14.5px;}
+  .btn-ghost{border:1px solid var(--line); color:var(--text); padding:13px 22px; border-radius:9px; text-decoration:none; font-size:14.5px; font-family:var(--font-mono); display:inline-flex; align-items:center; gap:8px;}
+  .btn-ghost:hover{border-color:var(--lime-deep); color:var(--lime);}
+
+  .hero-strip{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+  .hero-strip .cell{background:var(--bg-panel); padding:16px 18px;}
+  .hero-strip .cell .k{font-family:var(--font-mono); font-size:10px; letter-spacing:0.08em; color:var(--text-faint); text-transform:uppercase; margin-bottom:6px;}
+  .hero-strip .cell .v{font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--lime);}
+  .hero-strip .cell .v small{font-family:var(--font-mono); font-size:11px; font-weight:400; color:var(--text-muted); display:block; margin-top:2px;}
+
+  .agent-console{display:none; background:var(--mono-bg); border:1px solid var(--line); border-radius:12px; padding:20px 22px; font-family:var(--font-mono); font-size:12px; color:var(--lime-dim); overflow-x:auto; white-space:pre;}
+  .agent-console .k2{color:var(--text-faint);}
+  .agent-console .s{color:#e0b8ff;}
+  .agent-console .n{color:#ffd88f;}
+  body.agent-mode .hero-strip{display:none;}
+  body.agent-mode .agent-console{display:block;}
+  body.agent-mode .human-only{display:none !important;}
+
+  .ticker{border-bottom:1px solid var(--line); background:rgba(13,19,12,0.9); overflow:hidden; white-space:nowrap; padding:10px 0;}
+  .ticker-track{display:inline-block; font-family:var(--font-mono); font-size:12px; color:var(--text-faint); animation:scroll-left 38s linear infinite;}
+  .ticker-track span{margin-right:44px; color:var(--text-muted);}
+  .ticker-track span b{color:var(--lime-dim);}
+  @keyframes scroll-left{from{transform:translateX(0);} to{transform:translateX(-50%);}}
+
+  section{padding:80px 0; border-bottom:1px solid var(--line);}
+  .section-head{display:flex; justify-content:space-between; align-items:flex-end; gap:24px; margin-bottom:40px; flex-wrap:wrap;}
+  .section-tag{font-family:var(--font-mono); font-size:11.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--lime-dim); margin-bottom:10px; display:block;}
+  .section-head h2{font-family:var(--font-display); font-size:clamp(24px,3vw,36px); font-weight:700; letter-spacing:-0.01em;}
+  .section-head p{color:var(--text-muted); max-width:48ch; font-size:14.5px;}
+
+  .feed-filters{display:flex; gap:8px; margin-bottom:26px; flex-wrap:wrap;}
+  .feed-filters button{font-family:var(--font-mono); font-size:12px; letter-spacing:0.03em; background:var(--bg-panel); border:1px solid var(--line); color:var(--text-muted); padding:8px 14px; border-radius:99px; cursor:pointer;}
+  .feed-filters button.active{background:var(--lime); color:#0a0f08; border-color:var(--lime); font-weight:700;}
+  .feed{display:flex; flex-direction:column; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  .feed-item{background:var(--bg-panel); padding:20px 24px; display:grid; grid-template-columns:120px 1fr auto; gap:20px; align-items:start; transition:background .15s ease;}
+  .feed-item:hover{background:var(--bg-panel-2);}
+  .feed-item .date{font-family:var(--font-mono); font-size:11.5px; color:var(--text-faint); padding-top:3px;}
+  .feed-item .tag{display:inline-block; font-family:var(--font-mono); font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--lime-dim); border:1px solid var(--line); padding:2px 8px; border-radius:99px; margin-bottom:8px;}
+  .feed-item h3{font-size:15.5px; font-weight:600; margin-bottom:6px; line-height:1.3;}
+  .feed-item p{font-size:13px; color:var(--text-muted);}
+  .feed-item .src{font-family:var(--font-mono); font-size:11px; color:var(--text-faint); white-space:nowrap; padding-top:3px;}
+
+  .grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  .card{background:var(--bg-panel); padding:26px 24px;}
+  .card .num{font-family:var(--font-mono); font-size:11px; color:var(--lime-deep); margin-bottom:12px;}
+  .card h3{font-family:var(--font-display); font-size:17px; margin-bottom:10px; font-weight:700;}
+  .card p{font-size:13px; color:var(--text-muted);}
+
+  /* spec table */
+  .spec-table{width:100%; border-collapse:collapse; font-size:13.5px; margin-bottom:28px;}
+  .spec-table th{text-align:left; font-family:var(--font-mono); font-size:10.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-faint); padding:10px 14px; border-bottom:1px solid var(--line); white-space:nowrap;}
+  .spec-table td{padding:13px 14px; border-bottom:1px solid var(--line); vertical-align:top; font-family:var(--font-mono); font-size:12.5px;}
+  .spec-table td.label{color:var(--text-muted); font-family:var(--font-body); font-size:13px; white-space:nowrap;}
+  .spec-table td .val{color:var(--lime-dim);}
+  .spec-table tr:last-child td{border-bottom:none;}
+  .spec-note{font-size:11.5px; color:var(--text-faint); font-family:var(--font-mono); margin-top:-14px; margin-bottom:28px;}
+
+  .two-col{display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+  @media (max-width:900px){.two-col{grid-template-columns:1fr;}}
+
+  .code-block{background:var(--mono-bg); border:1px solid var(--line); border-radius:12px; padding:18px 20px; font-family:var(--font-mono); font-size:11.8px; color:var(--lime-dim); overflow-x:auto; white-space:pre; line-height:1.65;}
+  .code-block .c-key{color:#e0b8ff;}
+  .code-block .c-str{color:var(--lime);}
+  .code-block .c-com{color:var(--text-faint);}
+  .code-block .c-type{color:#ffd88f;}
+  .code-label{font-family:var(--font-mono); font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-faint); margin-bottom:8px;}
+
+  .asset-table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  .asset-table th{text-align:left; font-family:var(--font-mono); font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-faint); padding:12px 16px; border-bottom:1px solid var(--line);}
+  .asset-table td{padding:16px; border-bottom:1px solid var(--line); vertical-align:top;}
+  .asset-table tr:last-child td{border-bottom:none;}
+  .asset-table .pill{display:inline-block; font-family:var(--font-mono); font-size:11px; background:rgba(200,255,61,0.1); color:var(--lime-dim); padding:3px 9px; border-radius:6px;}
+  .asset-note{margin-top:20px; padding:16px 18px; border:1px dashed var(--line); border-radius:10px; font-size:13px; color:var(--text-muted); font-family:var(--font-mono); line-height:1.6;}
+  .asset-note b{color:var(--lime-dim);}
+
+  .prose{font-size:14px; color:var(--text-muted); line-height:1.7; margin-bottom:18px;}
+  .prose b{color:var(--text);}
+  .prose code{font-family:var(--font-mono); font-size:12.5px; background:var(--bg-panel); padding:1px 6px; border-radius:4px; color:var(--lime-dim);}
+
+  .agents-layout{display:grid; grid-template-columns:1fr 1fr; gap:28px;}
+  @media (max-width:900px){.agents-layout{grid-template-columns:1fr;}}
+  .agent-feature{background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); padding:24px; margin-bottom:1px;}
+  .agent-feature h4{font-family:var(--font-display); font-size:15.5px; margin-bottom:8px;}
+  .agent-feature p{font-size:13px; color:var(--text-muted);}
+
+  /* expandable / accordion blocks */
+  .expand{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:12px;
+    margin-bottom:28px; overflow:hidden;
+  }
+  .expand-head{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    width:100%; background:transparent; border:none; cursor:pointer;
+    padding:16px 20px; text-align:left; color:var(--text); font-family:var(--font-mono);
+  }
+  .expand-head:hover{background:var(--bg-panel-2);}
+  .expand-head .eh-left{display:flex; align-items:center; gap:12px;}
+  .expand-head .eh-idx{font-size:10.5px; color:var(--lime-deep); letter-spacing:0.06em;}
+  .expand-head .eh-title{font-size:13.5px; font-weight:600; color:var(--text);}
+  .expand-head .eh-sub{font-size:11.5px; color:var(--text-faint); font-weight:400; display:block; margin-top:2px;}
+  .expand-head .chevron{
+    width:22px; height:22px; flex-shrink:0; border:1px solid var(--line); border-radius:6px;
+    display:flex; align-items:center; justify-content:center; color:var(--lime-dim);
+    transition:transform .25s ease, border-color .2s ease;
+  }
+  .expand.open .expand-head .chevron{transform:rotate(45deg); border-color:var(--lime-deep);}
+  .expand-body{
+    max-height:0; overflow:hidden;
+    transition:max-height .35s ease;
+    border-top:0 solid var(--line);
+  }
+  .expand.open .expand-body{border-top:1px solid var(--line);}
+  .expand-body-inner{padding:20px;}
+
+  .feed-item{cursor:pointer;}
+  .feed-item .feed-extra{
+    grid-column:1 / -1; max-height:0; overflow:hidden;
+    transition:max-height .3s ease; font-family:var(--font-mono); font-size:11.5px; color:var(--text-faint);
+  }
+  .feed-item.open .feed-extra{max-height:80px; margin-top:10px; padding-top:12px; border-top:1px dashed var(--line);}
+  .feed-item .feed-extra a{color:var(--lime-dim); text-decoration:none; border-bottom:1px solid var(--lime-deep);}
+  .feed-item .feed-head-row{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .feed-item .chev-sm{
+    width:18px; height:18px; flex-shrink:0; border:1px solid var(--line); border-radius:5px;
+    display:flex; align-items:center; justify-content:center; color:var(--text-faint); font-size:11px;
+    transition:transform .25s ease, color .2s ease;
+  }
+  .feed-item.open .chev-sm{transform:rotate(45deg); color:var(--lime-dim);}
+
+  /* instrumentation corner brackets — cold/technical detailing */
+  .card, .hero-strip .cell, .agent-feature, .expand, .agent-console, .code-block{
+    position:relative;
+  }
+  .card::before, .hero-strip .cell::before, .agent-feature::before, .expand::before,
+  .card::after, .hero-strip .cell::after, .agent-feature::after, .expand::after{
+    content:""; position:absolute; width:7px; height:7px; pointer-events:none; opacity:0.7;
+  }
+  .card::before, .hero-strip .cell::before, .agent-feature::before, .expand::before{
+    top:6px; left:6px; border-top:1px solid var(--lime-deep); border-left:1px solid var(--lime-deep);
+  }
+  .card::after, .hero-strip .cell::after, .agent-feature::after, .expand::after{
+    bottom:6px; right:6px; border-bottom:1px solid var(--lime-deep); border-right:1px solid var(--lime-deep);
+  }
+
+  footer{padding:50px 0 60px;}
+  .footer-grid{display:flex; justify-content:space-between; gap:40px; flex-wrap:wrap; margin-bottom:36px;}
+  .footer-col h5{font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-faint); margin-bottom:14px;}
+  .footer-col ul{list-style:none;}
+  .footer-col li{margin-bottom:9px; font-size:13.5px;}
+  .footer-col a{text-decoration:none; color:var(--text-muted); display:inline-flex; align-items:center; gap:6px;}
+  .footer-col a:hover{color:var(--lime);}
+  .footer-col a svg{width:13px; height:13px;}
+  .disclaimer{font-family:var(--font-mono); font-size:11.5px; color:var(--text-faint); border-top:1px solid var(--line); padding-top:24px; line-height:1.7; max-width:82ch;}
+
+  @media (max-width:800px){
+    .hero-strip{grid-template-columns:repeat(2,1fr);}
+    .grid-3{grid-template-columns:1fr;}
+    .feed-item{grid-template-columns:1fr; gap:8px;}
+    .nav ul{display:none;}
+  }
+</style>
+</head>
+<body>
+<canvas id="binary-bg" aria-hidden="true"></canvas>
+<div class="grain"></div>
+
+<header>
+  <div class="wrap nav">
+    <div class="logo">
+      <span class="dot"></span>
+      <span>ROBINOMNIA<br><small>unofficial · agent-readable index</small></span>
+    </div>
+    <ul>
+      <li><a href="#feed">News</a></li>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#protocol">Protocol</a></li>
+      <li><a href="#tokens">Tokens</a></li>
+      <li><a href="#api">API</a></li>
+      <li><a href="#agents">For Agents</a></li>
+    </ul>
+    <div class="nav-right">
+      <div class="view-toggle">
+        <button id="btn-human" class="active" onclick="setMode('human')">HUMAN</button>
+        <button id="btn-agent" onclick="setMode('agent')">AGENT</button>
+      </div>
+      <a class="x-btn" href="https://x.com/robinomnia" target="_blank" rel="noopener" aria-label="RobinOmnia on X">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.6 8.7L23.4 22h-7.1l-5.6-7.3L4.3 22H1.2l8.1-9.3L1 2h7.3l5 6.7L18.9 2Zm-1.2 18h1.9L7.4 4H5.4l12.3 16Z"/></svg>
+      </a>
+      <a class="docs-btn" href="https://docs.robinhood.com/chain/" target="_blank" rel="noopener">Documentation →</a>
+    </div>
+  </div>
+</header>
+
+<div class="ticker">
+  <div class="wrap">
+    <div class="ticker-track">
+      <span><b>Chain ID 4663</b> — mainnet · testnet 46630</span>
+      <span><b>RPC</b> — rpc.mainnet.chain.robinhood.com</span>
+      <span><b>ERC-8056</b> — the scaled-UI-amount standard behind Stock Tokens</span>
+      <span><b>ERC-4337</b> — native account abstraction, Bundler API, gas sponsorship</span>
+      <span><b>DA</b> — settlement + data availability via Ethereum blobs</span>
+      <span><b>~0.1s</b> — target soft-confirmation block time</span>
+      <span><b>Chain ID 4663</b> — mainnet · testnet 46630</span>
+      <span><b>RPC</b> — rpc.mainnet.chain.robinhood.com</span>
+      <span><b>ERC-8056</b> — the scaled-UI-amount standard behind Stock Tokens</span>
+      <span><b>ERC-4337</b> — native account abstraction, Bundler API, gas sponsorship</span>
+      <span><b>DA</b> — settlement + data availability via Ethereum blobs</span>
+      <span><b>~0.1s</b> — target soft-confirmation block time</span>
+    </div>
+  </div>
+</div>
+
+<section class="hero">
+  <div class="wrap">
+    <span class="eyebrow"><span class="pulse"></span>AI Knowledge Layer · a live source built for agents</span>
+    <h1>RobinOmnia: the deep layer under <em>Robinhood Chain</em>.</h1>
+    <p class="lead">Not the marketing page — the specs. Chain IDs, RPC endpoints, the ERC-8056 token standard behind Stock Tokens, account-abstraction stack, and a news feed, all served in a form agents can parse directly.</p>
+    <div class="hero-actions">
+      <a class="btn-primary" href="#protocol">Protocol specs →</a>
+      <a class="btn-ghost" href="https://x.com/robinomnia" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M18.9 2H22l-7.6 8.7L23.4 22h-7.1l-5.6-7.3L4.3 22H1.2l8.1-9.3L1 2h7.3l5 6.7L18.9 2Zm-1.2 18h1.9L7.4 4H5.4l12.3 16Z"/></svg>
+        @robinomnia
+      </a>
+    </div>
+
+    <div class="hero-strip human-only">
+      <div class="cell"><div class="k">Chain ID</div><div class="v">4663<small>mainnet · L2</small></div></div>
+      <div class="cell"><div class="k">Token std</div><div class="v">ERC-8056<small>scaled UI amount</small></div></div>
+      <div class="cell"><div class="k">Accounts</div><div class="v">ERC-4337<small>native AA support</small></div></div>
+      <div class="cell"><div class="k">DA layer</div><div class="v">Ethereum<small>blob-based</small></div></div>
+    </div>
+
+    <div class="agent-console">
+<span class="k2">// GET /rhc/summary.json</span>
+{
+  <span class="k2">"chain"</span>: <span class="s">"Robinhood Chain"</span>,
+  <span class="k2">"chain_id_mainnet"</span>: <span class="n">4663</span>,
+  <span class="k2">"chain_id_testnet"</span>: <span class="n">46630</span>,
+  <span class="k2">"rpc_mainnet"</span>: <span class="s">"https://rpc.mainnet.chain.robinhood.com"</span>,
+  <span class="k2">"rpc_testnet"</span>: <span class="s">"https://rpc.testnet.chain.robinhood.com"</span>,
+  <span class="k2">"explorer"</span>: <span class="s">"https://robinhoodchain.blockscout.com"</span>,
+  <span class="k2">"gas_token"</span>: <span class="s">"ETH"</span>,
+  <span class="k2">"native_token"</span>: <span class="s">null</span>,
+  <span class="k2">"sequencing"</span>: <span class="s">"first-come-first-served (FCFS)"</span>,
+  <span class="k2">"data_availability"</span>: <span class="s">"Ethereum blobs"</span>,
+  <span class="k2">"account_abstraction"</span>: <span class="s">"ERC-4337 (Bundler API, Gas Manager)"</span>,
+  <span class="k2">"stock_token_standard"</span>: <span class="s">"ERC-20 + ERC-8056"</span>,
+  <span class="k2">"docs"</span>: <span class="s">"https://docs.robinhood.com/chain/"</span>,
+  <span class="k2">"source"</span>: <span class="s">"RobinOmnia — unofficial index"</span>,
+  <span class="k2">"x"</span>: <span class="s">"https://x.com/robinomnia"</span>
+}
+    </div>
+  </div>
+</section>
+
+<section id="feed">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="section-tag">Feed · 14 entries</span>
+        <h2>Network news and updates</h2>
+      </div>
+      <p>A chronicle of key events around Robinhood Chain — from launch to current ecosystem and protocol activity.</p>
+    </div>
+
+    <div class="feed-filters">
+      <button class="active" data-f="all">All</button>
+      <button data-f="network">Network</button>
+      <button data-f="assets">Assets</button>
+      <button data-f="dev">Dev / API</button>
+      <button data-f="eco">Ecosystem</button>
+    </div>
+
+    <div class="feed" id="feed-list">
+
+      <div class="feed-item" data-cat="network" data-feed-toggle><div class="date">Jul 1, 2026</div><div><div class="feed-head-row"><span class="tag">Network</span><span class="chev-sm">+</span></div><h3>Robinhood Chain public mainnet launches</h3><p>The network opened to users in more than 120 countries; alongside it, Robinhood Earn launched — a yield product on the USDG stablecoin.</p><div class="feed-extra">source — <a href="#" onclick="return false;">coindesk.com</a> · category: network</div></div><div class="src">coindesk.com</div></div>
+
+      <div class="feed-item" data-cat="dev" data-feed-toggle><div class="date">Jul 1, 2026</div><div><div class="feed-head-row"><span class="tag">Dev / API</span><span class="chev-sm">+</span></div><h3>ERC-8056 goes live under Stock Tokens</h3><p>Stock Tokens ship as ERC-20 plus an ERC-8056 "scaled UI amount" extension, letting contracts track corporate actions like splits and dividends without rebasing balances.</p><div class="feed-extra">source — <a href="#" onclick="return false;">docs.robinhood.com</a> · category: dev</div></div><div class="src">docs.robinhood.com</div></div>
+
+      <div class="feed-item" data-cat="assets" data-feed-toggle><div class="date">Jul 1, 2026</div><div><div class="feed-head-row"><span class="tag">Assets</span><span class="chev-sm">+</span></div><h3>Tokenized stocks become available on-chain</h3><p>Stock Tokens — ERC-20 instruments issued by Robinhood Assets (Jersey) Limited — give economic exposure to US equities and ETFs, tradable 24/7 in supported wallets.</p><div class="feed-extra">source — <a href="#" onclick="return false;">docs.robinhood.com</a> · category: assets</div></div><div class="src">docs.robinhood.com</div></div>
+
+      <div class="feed-item" data-cat="dev" data-feed-toggle><div class="date">Jul 2, 2026</div><div><div class="feed-head-row"><span class="tag">Dev / API</span><span class="chev-sm">+</span></div><h3>Account abstraction ships as a first-class feature</h3><p>Robinhood Chain natively supports ERC-4337: a Bundler API for UserOperations, programmable smart wallets, and a Gas Manager for sponsoring user fees.</p><div class="feed-extra">source — <a href="#" onclick="return false;">docs.robinhood.com</a> · category: dev</div></div><div class="src">docs.robinhood.com</div></div>
+
+      <div class="feed-item" data-cat="eco" data-feed-toggle><div class="date">Jul 1, 2026</div><div><div class="feed-head-row"><span class="tag">Ecosystem</span><span class="chev-sm">+</span></div><h3>HOOD shares rise on the launch news</h3><p>After the announcement at a London event, Robinhood shares gained roughly 5% intraday, still trading around 30% below their October record.</p><div class="feed-extra">source — <a href="#" onclick="return false;">coindesk.com</a> · category: eco</div></div><div class="src">coindesk.com</div></div>
+
+      <div class="feed-item" data-cat="network" data-feed-toggle><div class="date">Jul 8, 2026</div><div><div class="feed-head-row"><span class="tag">Network</span><span class="chev-sm">+</span></div><h3>Why Arbitrum Orbit: the architecture rationale</h3><p>Documentation explains the choice of a modular L2 framework: Ethereum-level security, faster finality, and lower transaction costs than L1.</p><div class="feed-extra">source — <a href="#" onclick="return false;">docs.robinhood.com</a> · category: network</div></div><div class="src">docs.robinhood.com</div></div>
+
+      <div class="feed-item" data-cat="dev" data-feed-toggle><div class="date">Jul 9, 2026</div><div><div class="feed-head-row"><span class="tag">Dev / API</span><span class="chev-sm">+</span></div><h3>Blockscout ships a Pro API for the chain</h3><p>A REST API layer over the explorer exposes decoded contract source, ABIs, and proxy metadata programmatically — beyond raw JSON-RPC.</p><div class="feed-extra">source — <a href="#" onclick="return false;">blog.blockscout.com</a> · category: dev</div></div><div class="src">blog.blockscout.com</div></div>
+
+      <div class="feed-item" data-cat="eco" data-feed-toggle><div class="date">Jul 9, 2026</div><div><div class="feed-head-row"><span class="tag">Ecosystem</span><span class="chev-sm">+</span></div><h3>Mizuho raises HOOD price target to $130</h3><p>Analysts call Robinhood a potential "global brokerage hyperscaler" as the company expands into on-chain infrastructure.</p><div class="feed-extra">source — <a href="#" onclick="return false;">datawallet.com</a> · category: eco</div></div><div class="src">datawallet.com</div></div>
+
+      <div class="feed-item" data-cat="assets" data-feed-toggle><div class="date">Jul 10, 2026</div><div><div class="feed-head-row"><span class="tag">Assets</span><span class="chev-sm">+</span></div><h3>The network has no native token of its own</h3><p>Unlike many L2s, Robinhood Chain does not issue a chain-level token — ETH covers gas, and HOOD stock remains the closest investable proxy for the business.</p><div class="feed-extra">source — <a href="#" onclick="return false;">datawallet.com</a> · category: assets</div></div><div class="src">datawallet.com</div></div>
+
+      <div class="feed-item" data-cat="network" data-feed-toggle><div class="date">Jul 11, 2026</div><div><div class="feed-head-row"><span class="tag">Network</span><span class="chev-sm">+</span></div><h3>Sequencer model: strict arrival-time ordering</h3><p>Transactions process first-come-first-served — a higher fee buys no priority, which lowers MEV risk and keeps the queue predictable.</p><div class="feed-extra">source — <a href="#" onclick="return false;">docs.robinhood.com</a> · category: network</div></div><div class="src">docs.robinhood.com</div></div>
+
+      <div class="feed-item" data-cat="dev" data-feed-toggle><div class="date">Jul 12, 2026</div><div><div class="feed-head-row"><span class="tag">Dev / API</span><span class="chev-sm">+</span></div><h3>Recommended RPC providers ranked for latency</h3><p>Infra guides list Alchemy as the recommended default, with Quicknode, Blockdaemon, dRPC and Validation Cloud as alternates for production traffic.</p><div class="feed-extra">source — <a href="#" onclick="return false;">quicknode.com</a> · category: dev</div></div><div class="src">quicknode.com</div></div>
+
+      <div class="feed-item" data-cat="assets" data-feed-toggle><div class="date">Jul 15, 2026</div><div><div class="feed-head-row"><span class="tag">Assets</span><span class="chev-sm">+</span></div><h3>USDG lending goes live via Robinhood Earn</h3><p>Eligible US users can lend USDG through a self-custody wallet at an estimated 7% APY, on lending infrastructure powered by the Morpho protocol.</p><div class="feed-extra">source — <a href="#" onclick="return false;">robinhood.com/newsroom</a> · category: assets</div></div><div class="src">robinhood.com/newsroom</div></div>
+
+      <div class="feed-item" data-cat="eco" data-feed-toggle><div class="date">Jul 16, 2026</div><div><div class="feed-head-row"><span class="tag">Ecosystem</span><span class="chev-sm">+</span></div><h3>The February testnet: the road to mainnet</h3><p>Back in February 2026, a public testnet opened with entry points, documentation, and standard Ethereum dev tooling, ahead of the July mainnet launch.</p><div class="feed-extra">source — <a href="#" onclick="return false;">mexc.com</a> · category: eco</div></div><div class="src">mexc.com</div></div>
+
+      <div class="feed-item" data-cat="network" data-feed-toggle><div class="date">Jul 18, 2026</div><div><div class="feed-head-row"><span class="tag">Network</span><span class="chev-sm">+</span></div><h3>24/7 on-chain finance: the point of it</h3><p>The goal is programmable, self-custodied asset trading available around the clock, without intermediaries or platform lock-in.</p><div class="feed-extra">source — <a href="#" onclick="return false;">robinhood.com</a> · category: network</div></div><div class="src">robinhood.com</div></div>
+
+    </div>
+  </div>
+</section>
+
+<section id="overview">
+  <div class="wrap">
+    <div class="section-head">
+      <div><span class="section-tag">Overview</span><h2>What Robinhood Chain is</h2></div>
+      <p>The short version, before the specs.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card"><div class="num">01</div><h3>Permissionless L2</h3><p>A fully EVM-compatible Arbitrum Orbit chain — any developer can connect and deploy contracts without needing permission.</p></div>
+      <div class="card"><div class="num">02</div><h3>Built for RWA</h3><p>Primary use case is tokenized real-world assets: equities, ETFs, and other instruments made tradable on-chain, 24/7.</p></div>
+      <div class="card"><div class="num">03</div><h3>Wallet-native</h3><p>Natively supported by Robinhood Wallet; any EVM wallet or JSON-RPC client can connect through standard config.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="protocol">
+  <div class="wrap">
+    <div class="section-head">
+      <div><span class="section-tag">Protocol</span><h2>Chain specs &amp; endpoints</h2></div>
+      <p>The values you'd actually put in a config file.</p>
+    </div>
+
+    <table class="spec-table">
+      <tr><td class="label">Chain ID (mainnet)</td><td><span class="val">4663</span></td></tr>
+      <tr><td class="label">Chain ID (testnet)</td><td><span class="val">46630</span></td></tr>
+      <tr><td class="label">RPC (mainnet)</td><td><span class="val">https://rpc.mainnet.chain.robinhood.com</span></td></tr>
+      <tr><td class="label">RPC (testnet)</td><td><span class="val">https://rpc.testnet.chain.robinhood.com</span></td></tr>
+      <tr><td class="label">Sequencer feed (testnet, WS)</td><td><span class="val">wss://feed.testnet.chain.robinhood.com</span></td></tr>
+      <tr><td class="label">Testnet faucet</td><td><span class="val">faucet.testnet.chain.robinhood.com</span></td></tr>
+      <tr><td class="label">Block explorer (official)</td><td><span class="val">robinhoodchain.blockscout.com</span></td></tr>
+      <tr><td class="label">Block explorer (third-party)</td><td><span class="val">robinscan.io</span></td></tr>
+      <tr><td class="label">Rollup stack</td><td><span class="val">Arbitrum Orbit / Dedicated Blockchain</span></td></tr>
+      <tr><td class="label">Settlement layer</td><td><span class="val">Ethereum mainnet</span></td></tr>
+      <tr><td class="label">Data availability</td><td><span class="val">Ethereum blobs</span></td></tr>
+      <tr><td class="label">Gas token</td><td><span class="val">ETH</span></td></tr>
+      <tr><td class="label">Sequencing rule</td><td><span class="val">FCFS — arrival time only, no priority fee auction</span></td></tr>
+      <tr><td class="label">Target block time</td><td><span class="val">~0.1s soft confirmation (reported target)</span></td></tr>
+      <tr><td class="label">Account abstraction</td><td><span class="val">ERC-4337 — Bundler API, Smart Wallets, Gas Manager</span></td></tr>
+    </table>
+    <p class="spec-note">Testnet chain ID varies slightly across secondary sources (46630 vs. 46646 seen in the wild) — verify against docs.robinhood.com/chain before shipping.</p>
+
+    <div class="two-col">
+      <div>
+        <div class="code-label">Read chain ID over JSON-RPC</div>
+        <div class="code-block"><span class="c-com"># mainnet</span>
+curl https://rpc.mainnet.chain.robinhood.com \
+  -X POST -H <span class="c-str">"Content-Type: application/json"</span> \
+  -d <span class="c-str">'{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}'</span>
+
+<span class="c-com"># -> {"jsonrpc":"2.0","id":1,"result":"0x1237"}</span>
+<span class="c-com"># 0x1237 = 4663 decimal</span></div>
+      </div>
+      <div>
+        <div class="code-label">Add the network (wallet_addEthereumChain)</div>
+        <div class="code-block">{
+  <span class="c-key">"chainId"</span>: <span class="c-str">"0x1237"</span>,
+  <span class="c-key">"chainName"</span>: <span class="c-str">"Robinhood Chain"</span>,
+  <span class="c-key">"nativeCurrency"</span>: {
+    <span class="c-key">"name"</span>: <span class="c-str">"Ether"</span>,
+    <span class="c-key">"symbol"</span>: <span class="c-str">"ETH"</span>,
+    <span class="c-key">"decimals"</span>: <span class="c-com">18</span>
+  },
+  <span class="c-key">"rpcUrls"</span>: [<span class="c-str">"https://rpc.mainnet.chain.robinhood.com"</span>],
+  <span class="c-key">"blockExplorerUrls"</span>: [<span class="c-str">"https://robinhoodchain.blockscout.com"</span>]
+}</div>
+      </div>
+    </div>
+
+    <div class="expand" id="expand-node-calls">
+      <button class="expand-head" data-expand-toggle aria-expanded="false">
+        <span class="eh-left"><span class="eh-idx">[ 01 / NODE ]</span><span><span class="eh-title">Standard node calls beyond eth_chainId</span><span class="eh-sub">expand — common JSON-RPC reads against the same endpoint</span></span></span>
+        <span class="chevron">+</span>
+      </button>
+      <div class="expand-body">
+        <div class="expand-body-inner">
+          <div class="two-col">
+            <div>
+              <div class="code-label">Latest block</div>
+              <div class="code-block"><span class="c-com"># same RPC, different method</span>
+curl https://rpc.mainnet.chain.robinhood.com \
+  -X POST -H <span class="c-str">"Content-Type: application/json"</span> \
+  -d <span class="c-str">'{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'</span></div>
+            </div>
+            <div>
+              <div class="code-label">Transaction receipt</div>
+              <div class="code-block">curl https://rpc.mainnet.chain.robinhood.com \
+  -X POST -H <span class="c-str">"Content-Type: application/json"</span> \
+  -d <span class="c-str">'{"jsonrpc":"2.0","method":"eth_getTransactionReceipt","params":["0x..."],"id":1}'</span></div>
+            </div>
+          </div>
+          <p class="spec-note" style="margin-top:16px;">These are standard Ethereum JSON-RPC methods — any EVM tooling that already speaks eth_* works against the endpoints above without a custom SDK.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="tokens">
+  <div class="wrap">
+    <div class="section-head">
+      <div><span class="section-tag">Tokens</span><h2>The ERC-8056 stock-token standard</h2></div>
+      <p>How Stock Tokens actually work under the hood — not just "they're ERC-20."</p>
+    </div>
+
+    <p class="prose">Stock Tokens are <b>tokenised debt securities</b> issued by Robinhood Assets (Jersey) Limited ("RHJ"). Holding one gives economic exposure to an underlying share or ETF — it does <b>not</b> grant legal or beneficial ownership in the underlying security, and the tokens are not available to US persons (with further restrictions in jurisdictions including Canada, the UK, Switzerland and the UAE). Each token is a standard <code>ERC-20</code> contract with 18 decimals, one per ticker.</p>
+
+    <p class="prose">Because corporate actions (splits, dividends) change the economics of a stock but Robinhood didn't want rebasing balances, Stock Tokens layer <b>ERC-8056</b> — a "scaled UI amount" interface — on top of plain ERC-20. A multiplier is tracked on-chain; raw balances stay fixed, and UI-facing value is derived by applying the multiplier at read time.</p>
+
+    <div class="code-label">ERC-8056 — IScaledUIAmount interface</div>
+    <div class="code-block"><span class="c-type">interface</span> IScaledUIAmount {
+  <span class="c-com">// Current UI multiplier, 18 decimals (1e18 = 1.0)</span>
+  <span class="c-type">function</span> uiMultiplier() <span class="c-key">external</span> <span class="c-key">view</span> <span class="c-key">returns</span> (<span class="c-type">uint256</span>);
+
+  <span class="c-com">// Emitted when the multiplier changes (dividend, split, etc.)</span>
+  <span class="c-key">event</span> UIMultiplierUpdated(
+    <span class="c-type">uint256</span> oldMultiplier,
+    <span class="c-type">uint256</span> newMultiplier,
+    <span class="c-type">uint256</span> effectiveAtTimestamp
+  );
+
+  <span class="c-com">// Fires on transfer, carrying raw value + UI-adjusted (share) value</span>
+  <span class="c-key">event</span> TransferWithScaledUI(
+    <span class="c-key">address</span> <span class="c-key">indexed</span> from,
+    <span class="c-key">address</span> <span class="c-key">indexed</span> to,
+    <span class="c-type">uint256</span> value,
+    <span class="c-type">uint256</span> uiValue
+  );
+}</div>
+
+    <p class="prose" style="margin-top:22px;">Agents and indexers building on Stock Tokens should subscribe to <code>UIMultiplierUpdated</code> to catch corporate-action adjustments, and read <code>uiValue</code> from <code>TransferWithScaledUI</code> rather than the raw ERC-20 <code>Transfer</code> event when the number needs to reflect actual underlying-share economics.</p>
+
+    <div class="two-col">
+      <div>
+        <div class="code-label">Reading price via the Chainlink feed</div>
+        <div class="code-block"><span class="c-com">// Every Stock Token has a live Chainlink price feed</span>
+<span class="c-type">function</span> holdingValueUsd(
+  IERC20 stockToken,
+  AggregatorV3Interface priceFeed,
+  <span class="c-key">address</span> user
+) <span class="c-key">external</span> <span class="c-key">view</span> <span class="c-key">returns</span> (<span class="c-type">uint256</span>) {
+  <span class="c-type">uint256</span> balance = stockToken.balanceOf(user);
+  (, <span class="c-type">int256</span> price, , <span class="c-type">uint256</span> updatedAt, ) =
+    priceFeed.latestRoundData();
+  <span class="c-key">require</span>(price > 0 && updatedAt > 0, <span class="c-str">"Invalid price"</span>);
+  <span class="c-com">// price: 8 decimals, balance: 18 decimals</span>
+  <span class="c-key">return</span> (balance * <span class="c-type">uint256</span>(price)) / 1e8;
+}</div>
+      </div>
+      <div>
+        <div class="code-label">Standard ERC-20 calls still work</div>
+        <div class="code-block"><span class="c-type">IERC20</span> nvda = <span class="c-type">IERC20</span>(NVDA_TOKEN_ADDRESS);
+<span class="c-type">uint256</span> balance = nvda.balanceOf(user);
+nvda.transfer(recipient, amount);
+nvda.approve(spender, amount);
+
+<span class="c-com">// No special SDK needed for basic reads/writes —</span>
+<span class="c-com">// ERC-8056 only matters when you need UI-accurate</span>
+<span class="c-com">// values across corporate actions.</span></div>
+      </div>
+    </div>
+
+    <div class="asset-note" style="margin-top:28px;">
+      <b>Canonical addresses:</b> a token with a matching name or ticker but a different contract address is <b>not</b> the real Robinhood Stock Token. Always resolve addresses from the official Token Contracts page (docs.robinhood.com/chain/contracts/) before trusting a balance or a price feed.
+    </div>
+
+    <div class="expand" id="expand-decode">
+      <button class="expand-head" data-expand-toggle aria-expanded="false">
+        <span class="eh-left"><span class="eh-idx">[ 02 / DECODE ]</span><span><span class="eh-title">Reading a UI-adjusted transfer client-side</span><span class="eh-sub">expand — apply the multiplier without re-deriving it per call</span></span></span>
+        <span class="chevron">+</span>
+      </button>
+      <div class="expand-body">
+        <div class="expand-body-inner">
+          <div class="code-label">Cache the multiplier, decode the event</div>
+          <div class="code-block"><span class="c-com">// listen once, reuse until the next update</span>
+<span class="c-type">let</span> multiplier = <span class="c-key">await</span> stockToken.uiMultiplier();
+
+stockToken.on(<span class="c-str">"UIMultiplierUpdated"</span>, (oldM, newM) => {
+  multiplier = newM; <span class="c-com">// swap in the new scalar</span>
+});
+
+stockToken.on(<span class="c-str">"TransferWithScaledUI"</span>, (from, to, value, uiValue) => {
+  <span class="c-com">// uiValue already reflects the current multiplier —</span>
+  <span class="c-com">// no need to multiply raw `value` again client-side</span>
+  renderTransfer({ from, to, shares: uiValue });
+});</div>
+        </div>
+      </div>
+    </div>
+
+    <table class="asset-table" style="margin-top:32px;">
+      <thead><tr><th>Asset</th><th>Standard</th><th>Role on the network</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill">ETH</span></td><td>native</td><td>Sole gas token. Robinhood Chain has no chain-level native token of its own.</td></tr>
+        <tr><td><span class="pill">Stock Tokens</span></td><td>ERC-20 + ERC-8056</td><td>Debt securities from RHJ tracking US equities/ETFs; scaled-UI-amount for corporate actions.</td></tr>
+        <tr><td><span class="pill">USDG</span></td><td>ERC-20</td><td>Global Dollar stablecoin; used for pairs, payments, and Robinhood Earn lending via Morpho.</td></tr>
+        <tr><td><span class="pill">Third-party ERC-20s</span></td><td>ERC-20</td><td>Since the chain is permissionless, unrelated tokens (memecoins, community projects) get deployed and listed on the explorer alongside RHC-native assets — treat ticker matches with caution.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="api">
+  <div class="wrap">
+    <div class="section-head">
+      <div><span class="section-tag">API &amp; tooling</span><h2>Building on the chain</h2></div>
+      <p>Beyond raw JSON-RPC: explorer APIs, account abstraction, and deployment.</p>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="code-label">Blockscout Pro API — contract metadata</div>
+        <div class="code-block">curl <span class="c-str">"https://api.blockscout.com/4663/api/v2/\
+smart-contracts/$CONTRACT_ADDRESS\
+?apikey=$BLOCKSCOUT_API_KEY"</span>
+
+<span class="c-com"># returns: verified source, compiler settings,</span>
+<span class="c-com"># decoded ABI, proxy implementation (if any)</span></div>
+      </div>
+      <div>
+        <div class="code-label">Deploy with Foundry (testnet)</div>
+        <div class="code-block"><span class="c-key">export</span> PRIVATE_KEY=0x&lt;your_key&gt;
+<span class="c-key">export</span> RH_RPC_URL=https://rpc.testnet.chain.robinhood.com
+
+forge create HelloRobinhood \
+  --rpc-url $RH_RPC_URL \
+  --private-key $PRIVATE_KEY \
+  --broadcast
+
+forge verify-contract &lt;address&gt; \
+  src/HelloRobinhood.sol:HelloRobinhood \
+  --chain-id 46630 --verifier blockscout</div>
+      </div>
+    </div>
+
+    <table class="spec-table" style="margin-top:32px;">
+      <tr><td class="label">Account abstraction</td><td><span class="val">ERC-4337 — native support, no third-party bridge required</span></td></tr>
+      <tr><td class="label">Bundler API</td><td><span class="val">submit / estimate / manage UserOperations</span></td></tr>
+      <tr><td class="label">Smart Wallets</td><td><span class="val">contract wallets with batching + session keys</span></td></tr>
+      <tr><td class="label">Gas Manager</td><td><span class="val">sponsor user gas fees via configurable policies</span></td></tr>
+      <tr><td class="label">Recommended RPC provider</td><td><span class="val">Alchemy (default in official docs)</span></td></tr>
+      <tr><td class="label">Alternate RPC providers</td><td><span class="val">Quicknode, Blockdaemon, dRPC, Validation Cloud</span></td></tr>
+      <tr><td class="label">Explorer API docs</td><td><span class="val">robinhoodchain.blockscout.com/api-docs</span></td></tr>
+    </table>
+    <p class="spec-note">Public default RPC endpoints are rate-limited by design — use a provisioned provider (Alchemy or an alternate above) for anything production-facing.</p>
+
+    <div class="expand" id="expand-methods">
+      <button class="expand-head" data-expand-toggle aria-expanded="false">
+        <span class="eh-left"><span class="eh-idx">[ 03 / METHODS ]</span><span><span class="eh-title">Bundler &amp; account-abstraction method surface</span><span class="eh-sub">expand — the ERC-4337 calls a smart wallet integration touches</span></span></span>
+        <span class="chevron">+</span>
+      </button>
+      <div class="expand-body">
+        <div class="expand-body-inner">
+          <table class="spec-table" style="margin-bottom:0;">
+            <tr><td class="label">eth_sendUserOperation</td><td><span class="val">submit a signed UserOperation to the bundler</span></td></tr>
+            <tr><td class="label">eth_estimateUserOperationGas</td><td><span class="val">pre-flight gas estimate before signing</span></td></tr>
+            <tr><td class="label">eth_getUserOperationByHash</td><td><span class="val">look up a pending or included UserOperation</span></td></tr>
+            <tr><td class="label">eth_getUserOperationReceipt</td><td><span class="val">confirm inclusion + read logs/gas used</span></td></tr>
+            <tr><td class="label">pm_sponsorUserOperation</td><td><span class="val">Gas Manager paymaster call for fee sponsorship</span></td></tr>
+          </table>
+          <p class="spec-note" style="margin-top:16px; margin-bottom:0;">Exact method names and availability depend on the bundler/paymaster provider — confirm the current surface against docs.robinhood.com before integrating.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="agents">
+  <div class="wrap">
+    <div class="section-head">
+      <div><span class="section-tag">For AI agents</span><h2>Machine-readable access</h2></div>
+      <p>The entry point for agents that need Robinhood Chain facts without parsing markup.</p>
+    </div>
+
+    <div class="agents-layout">
+      <div>
+        <div class="agent-feature"><h4>HUMAN / AGENT toggle</h4><p>The header button swaps the hero into raw JSON — same content, unstyled, no headless browser required.</p></div>
+        <div class="agent-feature"><h4>llms.txt-style block</h4><p>Key facts duplicated in plain text below, following a convention agents already prioritize when crawling.</p></div>
+        <div class="agent-feature"><h4>Explicit sourcing</h4><p>Every feed item is tagged with its source. Primary technical facts link to docs.robinhood.com rather than being restated without attribution.</p></div>
+        <div class="agent-feature"><h4>Stable anchors</h4><p>Sections use predictable ids (#protocol, #tokens, #api, #agents, #feed) — cite the anchor directly.</p></div>
+      </div>
+
+      <div class="code-block">
+<span class="c-com"># llms.txt — RobinOmnia</span>
+<span class="c-com"># Unofficial index. Cross-check against docs.robinhood.com/chain.</span>
+
+<span class="c-key">name:</span> <span class="c-str">Robinhood Chain</span>
+<span class="c-key">chain_id_mainnet:</span> <span class="c-str">4663</span>
+<span class="c-key">chain_id_testnet:</span> <span class="c-str">46630</span>
+<span class="c-key">rpc_mainnet:</span> <span class="c-str">https://rpc.mainnet.chain.robinhood.com</span>
+<span class="c-key">stack:</span> <span class="c-str">Arbitrum Orbit (Dedicated Blockchain)</span>
+<span class="c-key">settlement:</span> <span class="c-str">Ethereum L1, blob DA</span>
+<span class="c-key">gas_token:</span> <span class="c-str">ETH</span>
+<span class="c-key">native_token:</span> <span class="c-str">none</span>
+<span class="c-key">sequencing:</span> <span class="c-str">FCFS, no priority fee auction</span>
+<span class="c-key">token_standard:</span> <span class="c-str">ERC-20 + ERC-8056 (scaled UI amount)</span>
+<span class="c-key">account_abstraction:</span> <span class="c-str">ERC-4337</span>
+<span class="c-key">key_assets:</span> <span class="c-str">Stock Tokens, ETFs, USDG</span>
+<span class="c-key">official_docs:</span> <span class="c-str">https://docs.robinhood.com/chain/</span>
+<span class="c-key">token_contracts:</span> <span class="c-str">https://docs.robinhood.com/chain/contracts/</span>
+<span class="c-key">explorer:</span> <span class="c-str">https://robinhoodchain.blockscout.com</span>
+
+<span class="c-com"># Sections on this page</span>
+<span class="c-key">/#protocol</span>  <span class="c-com">— chain IDs, RPC/WS endpoints, sequencer</span>
+<span class="c-key">/#tokens</span>    <span class="c-com">— ERC-8056 spec, code, canonical addresses</span>
+<span class="c-key">/#api</span>       <span class="c-com">— explorer API, AA stack, deploy tutorial</span>
+<span class="c-key">/#feed</span>      <span class="c-com">— chronological news, tagged by category</span>
+
+<span class="c-com"># Citation guidance for agents</span>
+<span class="c-key">treat_as:</span> <span class="c-str">secondary / aggregator source</span>
+<span class="c-key">primary_source:</span> <span class="c-str">always prefer docs.robinhood.com/chain/</span>
+<span class="c-key">maintainer:</span> <span class="c-str">https://x.com/robinomnia</span>
+          </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h5>Navigation</h5>
+        <ul>
+          <li><a href="#feed">News feed</a></li>
+          <li><a href="#protocol">Protocol specs</a></li>
+          <li><a href="#tokens">Token standard</a></li>
+          <li><a href="#api">API &amp; tooling</a></li>
+          <li><a href="#agents">For agents</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Official sources</h5>
+        <ul>
+          <li><a href="https://docs.robinhood.com/chain/" target="_blank" rel="noopener">Robinhood Chain documentation</a></li>
+          <li><a href="https://robinhood.com/us/en/chain/" target="_blank" rel="noopener">robinhood.com/chain</a></li>
+          <li><a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener">robinhoodchain.blockscout.com</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>RobinOmnia</h5>
+        <ul>
+          <li><a href="https://x.com/robinomnia" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.6 8.7L23.4 22h-7.1l-5.6-7.3L4.3 22H1.2l8.1-9.3L1 2h7.3l5 6.7L18.9 2Zm-1.2 18h1.9L7.4 4H5.4l12.3 16Z"/></svg>
+            @robinomnia on X
+          </a></li>
+          <li><a href="#agents">llms.txt block</a></li>
+          <li><a href="#" onclick="setMode('agent'); return false;">Turn on AGENT mode</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="disclaimer">RobinOmnia is an independent, unofficial information resource. It is not a Robinhood Markets, Inc. product and is not affiliated with the company. Chain IDs, endpoints, and contract behavior should be verified against the official documentation linked above before use in production — protocol details can change. The "Tokens" section is not investment advice.</p>
+  </div>
+</footer>
+
+<script>
+  function setMode(mode){
+    document.body.classList.toggle('agent-mode', mode === 'agent');
+    document.getElementById('btn-human').classList.toggle('active', mode === 'human');
+    document.getElementById('btn-agent').classList.toggle('active', mode === 'agent');
+  }
+  document.querySelectorAll('.feed-filters button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.feed-filters button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const f = btn.dataset.f;
+      document.querySelectorAll('.feed-item').forEach(item=>{
+        item.style.display = (f === 'all' || item.dataset.cat === f) ? 'grid' : 'none';
+      });
+    });
+  });
+
+  // ---- expandable panels (Protocol / Tokens / API) ----
+  document.querySelectorAll('[data-expand-toggle]').forEach(head=>{
+    const panel = head.parentElement;
+    const body = panel.querySelector('.expand-body');
+    head.addEventListener('click', ()=>{
+      const opening = !panel.classList.contains('open');
+      panel.classList.toggle('open', opening);
+      head.setAttribute('aria-expanded', String(opening));
+      body.style.maxHeight = opening ? body.scrollHeight + 'px' : '0px';
+    });
+  });
+
+  // ---- expandable feed items ----
+  document.querySelectorAll('[data-feed-toggle]').forEach(item=>{
+    item.addEventListener('click', (e)=>{
+      if (e.target.closest('a')) return;
+      item.classList.toggle('open');
+    });
+  });
+
+  // ---- floating binary code field ----
+  (function(){
+    const canvas = document.getElementById('binary-bg');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let W, H, cols, drops, fontSize = 14;
+
+    function resize(){
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      cols = Math.floor(W / fontSize);
+      drops = new Array(cols).fill(0).map(()=> Math.random() * -H / fontSize);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function drawStatic(){
+      ctx.clearRect(0,0,W,H);
+      ctx.font = fontSize + 'px monospace';
+      ctx.fillStyle = 'rgba(174,242,44,0.16)';
+      for(let i=0;i<cols;i+=3){
+        const y = (i * 97) % H;
+        ctx.fillText(Math.random() > 0.5 ? '1' : '0', i * fontSize, y);
+      }
+    }
+
+    function frame(){
+      ctx.fillStyle = 'rgba(6,10,7,0.06)';
+      ctx.fillRect(0,0,W,H);
+      ctx.font = fontSize + 'px monospace';
+      for(let i=0;i<cols;i++){
+        const bit = Math.random() > 0.5 ? '1' : '0';
+        const y = drops[i] * fontSize;
+        const hue = i % 5 === 0 ? 'rgba(95,224,168,0.55)' : 'rgba(174,242,44,0.4)';
+        ctx.fillStyle = hue;
+        ctx.fillText(bit, i * fontSize, y);
+        if(y > H && Math.random() > 0.975){ drops[i] = 0; }
+        drops[i] += 0.55;
+      }
+      requestAnimationFrame(frame);
+    }
+
+    if(reduceMotion){
+      drawStatic();
+    } else {
+      ctx.fillStyle = 'rgba(6,10,7,1)';
+      ctx.fillRect(0,0,W,H);
+      requestAnimationFrame(frame);
+    }
+  })();
+</script>
+
+</body>
+</html>
